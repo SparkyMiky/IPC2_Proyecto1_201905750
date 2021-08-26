@@ -358,7 +358,7 @@ def menu():
         try:
             option = int(input('Ingrese una opcion\n'))
         except Exception as e:
-            print('Opcion invalida')
+            print('Por favor cargue un archivo para analizar :) \n')
             continue
 
         if option == 1:
@@ -383,7 +383,7 @@ def menu():
                 matrizTerreno.imprimir()
                 matrizTerreno.imprimirRuta(matrizTerreno.buscar(celdaFinal))
             else:
-                print('Por favor cargue un archivo para analizar :) \n')
+                print('Opcion no válida, por favor intente de nuevo\n')
 
         elif option == 3:
             if terrenos != '':
