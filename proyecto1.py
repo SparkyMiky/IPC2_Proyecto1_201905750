@@ -2,6 +2,7 @@ import xml.etree.ElementTree as ET
 import math
 import os
 from tkinter.filedialog import askopenfilename
+from graphviz import Graph
 
 class terreno:
     def __init__(self, nombre, dimensionX, dimensionY, posicionInicioX, posicionInicioY, posicionFinX, posicionFinY, matriz):
@@ -31,8 +32,10 @@ class listaSimple:
         self.cabecera = None
         self.ultimo = None
         self.siguiente = None
+        self.size = 0
 
     def add(self, dato):
+        self.size += 1
         nodoAux = nodoLista(dato)
         if self.cabecera == None:
             self.cabecera = nodoAux
@@ -87,6 +90,23 @@ class listaSimple:
                 celda = nodoAux.dato
             nodoAux = nodoAux.siguiente
         return celda
+
+    def pop(self):
+        if self.size>0:
+            nodoAux = self.cabecera
+            if self.size == 1:
+                self.size -= 1
+                return nodoAux.dato
+            else:
+                while nodoAux.siguiente != self.ultimo:
+                    nodoAux = nodoAux.siguiente
+                nodoAux2 = self.ultimo
+                nodoAux.siguiente = None
+                self.ultimo = nodoAux
+                self.size -= 1
+                return nodoAux2.dato
+        else:
+            return None
 
 class colaPrioridad():
     def __init__(self):
@@ -237,7 +257,7 @@ class matriz:
                     acumulado = float(celdaAux.acumulado) + float(cA.valor)
                     if acumulado < cA.acumulado:
                         cp.eliminar(cA)
-                        cA.acumulado = acumulado
+                        cA.acumulado = int(acumulado)
                         cA.predecesor = celdaAux
                         cp.add(cA)
 
@@ -248,7 +268,7 @@ class matriz:
                     acumulado = float(celdaAux.acumulado) + float(cA.valor)
                     if acumulado < cA.acumulado:
                         cp.eliminar(cA)
-                        cA.acumulado = acumulado
+                        cA.acumulado = int(acumulado)
                         cA.predecesor = celdaAux
                         cp.add(cA)
 
@@ -259,7 +279,7 @@ class matriz:
                     acumulado = float(celdaAux.acumulado) + float(cA.valor)
                     if acumulado < cA.acumulado:
                         cp.eliminar(cA)
-                        cA.acumulado = acumulado
+                        cA.acumulado = int(acumulado)
                         cA.predecesor = celdaAux
                         cp.add(cA)
 
@@ -270,12 +290,12 @@ class matriz:
                     acumulado = float(celdaAux.acumulado) + float(cA.valor)
                     if acumulado < cA.acumulado:
                         cp.eliminar(cA)
-                        cA.acumulado = acumulado
+                        cA.acumulado = int(acumulado)
                         cA.predecesor = celdaAux
                         cp.add(cA)
             analizados.add(celdaAux)
 
-    def imprimirRuta(self, final):
+    def Ruta(self, final):
         celdaFinal = final
         celdaAux = final
         recorrido = listaSimple()
@@ -283,8 +303,10 @@ class matriz:
         while celdaAux.predecesor != None:
             celdaAux = celdaAux.predecesor
             recorrido.add(celdaAux)
+        return recorrido
 
-        print('\nLa ruta mas corta es:')
+    def imprimirRuta(self, recorrido):
+        print('\nLa ruta con menor consumo de combustible es:')
         nodoAux = self.columnas.cabecera
         while nodoAux != None:
             print('')
@@ -297,7 +319,6 @@ class matriz:
                 nodoAux2 = nodoAux2.siguiente
             nodoAux = nodoAux.siguiente
         print('')
-
 
 def CargarArchivos():
     f = askopenfilename()
@@ -314,7 +335,7 @@ def CargarArchivos():
                 atributo = subelem
                 if atributo.tag == 'dimension':
                     for subsubelem in subelem:
-                        if subsubelem.tag == 'm':
+                        if subsubelem.tag == 'n':
                             dimensionX = subsubelem.text
                         else:
                             dimensionY = subsubelem.text
@@ -343,10 +364,49 @@ def CargarArchivos():
     else:
         print('fallo al cargar archivo, por favor intente de nuevo')
 
+def escribirArchivo(ruta, contenido):
+    archivo = open(ruta, 'w')
+    archivo.write(contenido)
+    print('\narchivo escrito:')
+    print(ruta)
+    archivo.close()
+
+def crearXml(nombre,posicionInicioX,posicionInicioY,posicionFinX,posicionFinY,combustible, camino):
+    inicio = '<terreno nombre="'+nombre+'">\n  <posicioninicio>\n    <x>'+posicionInicioX+'</x>\n    <y>'+posicionInicioY+'</y>\n  </posicioninicio>\n  <posicionfin>\n    <x>'+posicionFinX+'</x>\n    <y>'+posicionFinY+'</y>\n  </posicionfin>\n  <combustible>'+combustible+'</combustible>'
+    celdaAux = camino.pop()
+    while celdaAux != None:
+        inicio += '\n  <posicion x="'+str(celdaAux.posicionX)+'" y="'+str(celdaAux.posicionY)+'">'+str(celdaAux.valor)+'</posicion>'
+        celdaAux = camino.pop()
+    fin = '\n<terreno>'
+    return inicio + fin
+
+def crearGrafica(nombre, matriz):
+    dot = Graph(name=nombre)
+    dot.graph_attr['rankdir'] = 'LR'
+    nodoAux = matriz.columnas.cabecera
+    i = 1
+    while nodoAux != None:
+        with dot.subgraph(name='sub_'+str(i)) as b:
+            nodoAux1 = nodoAux.dato.cabecera
+            contador = 0
+            while nodoAux1 != None:
+                contador += 1
+                b.node(str(i)+str(contador),str(nodoAux1.dato.valor))
+                if contador > 1:
+                    b.edge(str(i)+str(contador-1), str(i)+str(contador))
+                    if i > 1:
+                        b.edge(str(i)+str(contador-1), str(i-1)+str(contador-1),_attributes={'constraint': 'false'})
+                        if contador == nodoAux.dato.size:
+                            b.edge(str(i)+str(contador), str(i-1)+str(contador),_attributes={'constraint': 'false'})
+                nodoAux1 = nodoAux1.siguiente
+            nodoAux = nodoAux.siguiente
+            i += 1
+    dot.render(nombre, format='png', view=True)
 
 def menu():
     terrenos =''
     terreno = ''
+    recorrido = ''
     while True:
         print('\nMenu Principal:')
         print('      1. Cargar Archivo')
@@ -362,6 +422,7 @@ def menu():
             continue
 
         if option == 1:
+            print('Cargar Archivo')
             try:
                 terrenos = CargarArchivos()
                 print('\nCargando Archivos...')
@@ -369,32 +430,77 @@ def menu():
                 print('archivo erroneo')
 
         elif option == 2:
+            print('Procesar archivo')
             if terrenos != '':
-                print('\nProcesando archivo\n')
-                print('\nObteniendo terrenos...\n')
-                print('\nLista de Terrenos:\n')
-                terrenos.imprimir()
-                var = input('\nIngrese el nombre del terreno que desea procesar\n')
-                terreno = terrenos.buscar(var)
-                matrizTerreno = terreno.matriz
-                celdaInicio = celda(terreno.posicionInicioX,terreno.posicionInicioY,0)
-                celdaFinal = celda(terreno.posicionFinX,terreno.posicionFinY,0)
-                matrizTerreno.obtenerRuta(matrizTerreno.buscar(celdaInicio))
-                matrizTerreno.imprimir()
-                matrizTerreno.imprimirRuta(matrizTerreno.buscar(celdaFinal))
+                try:
+                    print('\nProcesando archivo\n')
+                    print('\nObteniendo terrenos...\n')
+                    print('\nLista de Terrenos:\n')
+                    terrenos.imprimir()
+                    var = input('\nIngrese el nombre del terreno que desea procesar\n')
+                    terreno = terrenos.buscar(var)
+                    matrizTerreno = terreno.matriz
+                    celdaInicio = celda(terreno.posicionInicioX,terreno.posicionInicioY,0)
+                    celdaFinal = celda(terreno.posicionFinX,terreno.posicionFinY,0)
+                    matrizTerreno.obtenerRuta(matrizTerreno.buscar(celdaInicio))
+                    print('Analizando terreno: '+terreno.nombre)
+                    print('Posicion de Inicio: '+str(terreno.posicionInicioX)+','+str(terreno.posicionInicioY))
+                    print('Posicion final: '+str(terreno.posicionFinX)+','+str(terreno.posicionFinY))
+                    matrizTerreno.imprimir()
+                    recorrido = matrizTerreno.Ruta(matrizTerreno.buscar(celdaFinal))
+                    matrizTerreno.imprimirRuta(recorrido)
+                    print('\nCantidad de combustible necesaria: '+str(matrizTerreno.buscar(celdaFinal).acumulado))
+                except Exception as e:
+                    print('')
             else:
                 print('Opcion no válida, por favor intente de nuevo\n')
 
         elif option == 3:
+            print('Escribir archivo salida')
             if terrenos != '':
-                print('Working on it')
+                try:
+                    print('\nObteniendo terrenos...\n')
+                    print('\nLista de Terrenos:\n')
+                    terrenos.imprimir()
+                    var = input('\nIngrese el nombre del terreno que desea procesar\n')
+                    terreno = terrenos.buscar(var)
+                    matrizTerreno = terreno.matriz
+                    celdaInicio = celda(terreno.posicionInicioX,terreno.posicionInicioY,0)
+                    matrizTerreno.obtenerRuta(matrizTerreno.buscar(celdaInicio))
+                    celdaFinal = celda(terreno.posicionFinX,terreno.posicionFinY,0)
+                    recorrido = matrizTerreno.Ruta(matrizTerreno.buscar(celdaFinal))
+                    contenido = crearXml(terreno.nombre, str(terreno.posicionInicioX), str(terreno.posicionInicioY), str(terreno.posicionFinX), str(terreno.posicionFinY), str(matrizTerreno.buscar(celdaFinal).acumulado),recorrido)
+                    variable = int(input(' 1. Escribir ruta\n 2. Guardar en la carpeta del proyecto\nEscoja la opcion deseada:'))
+                    if variable == 1:
+                        name = input('Escriba la ruta para guardar el archivo, por  favor incluya nombre y extension\n')
+                        escribirArchivo(name,contenido)
+                    elif variable == 2:
+                        escribirArchivo(terreno.nombre+'.xml',contenido)
+                except Exception as e:
+                    print('')
             else:
                 print('Por favor cargue un archivo para analizar :) \n')
         elif option == 4:
+            print('Mostrar datos del estudiante:')
             print('> Rony Omar Miguel Lopez\n> 201905750\n> Introduccion a la Programacion y Computacion seccion '"A"'\n> Ingenieria en Ciencias y Sistemas\n> 4to Semestre\n')
         elif option == 5:
+            print('Generar grafica')
             if terrenos != '':
-                print('Working on it')
+                if terrenos != '':
+                    try:
+                        print('\nObteniendo terrenos...\n')
+                        print('\nLista de Terrenos:\n')
+                        terrenos.imprimir()
+                        var = input('\nIngrese el nombre del terreno que desea graficar\n')
+                        terreno = terrenos.buscar(var)
+                        matrizTerreno = terreno.matriz
+                        matrizAux = matrizTerreno
+                        print("Creando grafica...")
+                        contenido = crearGrafica(terreno.nombre, matrizAux)
+                    except Exception as e:
+                        print('')
+                else:
+                    print('Por favor cargue un archivo para analizar :) \n')
             else:
                 print('Por favor cargue un archivo para analizar :) \n')
         elif option == 6:
