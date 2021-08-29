@@ -495,6 +495,7 @@ def menu():
                         terreno = terrenos.buscar(var)
                         matrizTerreno = terreno.matriz
                         matrizAux = matrizTerreno
+                        print("Creando grafica...")
                         contenido = crearGrafica(terreno.nombre, matrizAux)
                     except Exception as e:
                         print('')
