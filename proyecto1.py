@@ -3,7 +3,7 @@ import math
 import os
 from tkinter.filedialog import askopenfilename
 from graphviz import Graph
-
+#begins code
 class terreno:
     def __init__(self, nombre, dimensionX, dimensionY, posicionInicioX, posicionInicioY, posicionFinX, posicionFinY, matriz):
         self.nombre = nombre
