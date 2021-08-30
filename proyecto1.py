@@ -3,7 +3,7 @@ import math
 import os
 from tkinter.filedialog import askopenfilename
 from graphviz import Graph
-
+#begins code
 class terreno:
     def __init__(self, nombre, dimensionX, dimensionY, posicionInicioX, posicionInicioY, posicionFinX, posicionFinY, matriz):
         self.nombre = nombre
@@ -31,7 +31,6 @@ class listaSimple:
     def __init__(self):
         self.cabecera = None
         self.ultimo = None
-        self.siguiente = None
         self.size = 0
 
     def add(self, dato):
@@ -79,17 +78,6 @@ class listaSimple:
                 nodoAux = nodoAux.siguiente
         if nodoAux == None:
             return False
-
-    def buscarMinimo(self):
-        nodoAux = self.cabecera
-        minimo = nodoAux.dato.valor
-        celda = nodoAux.dato
-        while nodoAux != None:
-            if nodoAux.dato.valor < minimo:
-                minimo = nodoAux.dato.valor
-                celda = nodoAux.dato
-            nodoAux = nodoAux.siguiente
-        return celda
 
     def pop(self):
         if self.size>0:
@@ -151,12 +139,6 @@ class colaPrioridad():
                             nodoAux.siguiente = nodoAux2.siguiente
                         break
                     nodoAux = nodoAux.siguiente
-
-    def imprimir(self):
-        nodoAux = self.cabecera
-        while nodoAux != None:
-            print(nodoAux.celda.valor)
-            nodoAux = nodoAux.siguiente
 class nodoCola():
     def __init__(self, celda):
         self.celda = celda
@@ -169,13 +151,6 @@ class celda:
         self.valor = valor
         self.acumulado = math.inf
         self.predecesor = None
-class nodoMatriz:
-
-    def __init__ (self, celda, posicionX, posicionY):
-        self.celda = celda
-        self.posicionX = posicionX
-        self.posicionY = posicionY
-        self.siguiente = None
 class matriz:
     def __init__(self, dimensionX, dimensionY):
         self.dimensionX = int(dimensionX)
@@ -371,13 +346,13 @@ def escribirArchivo(ruta, contenido):
     print(ruta)
     archivo.close()
 
-def crearXml(nombre,posicionInicioX,posicionInicioY,posicionFinX,posicionFinY,combustible, camino):
-    inicio = '<terreno nombre="'+nombre+'">\n  <posicioninicio>\n    <x>'+posicionInicioX+'</x>\n    <y>'+posicionInicioY+'</y>\n  </posicioninicio>\n  <posicionfin>\n    <x>'+posicionFinX+'</x>\n    <y>'+posicionFinY+'</y>\n  </posicionfin>\n  <combustible>'+combustible+'</combustible>'
+def crearXml(nombre,dimensionX,dimensionY,posicionInicioX,posicionInicioY,posicionFinX,posicionFinY,combustible, camino):
+    inicio = '<terreno nombre="'+nombre+'">\n  <dimension>\n    <n>'+dimensionX+'</n>\n    <m>'+dimensionY+'</m>\n  </dimension>\n  <posicioninicio>\n    <x>'+posicionInicioX+'</x>\n    <y>'+posicionInicioY+'</y>\n  </posicioninicio>\n  <posicionfin>\n    <x>'+posicionFinX+'</x>\n    <y>'+posicionFinY+'</y>\n  </posicionfin>\n  <combustible>'+combustible+'</combustible>'
     celdaAux = camino.pop()
     while celdaAux != None:
         inicio += '\n  <posicion x="'+str(celdaAux.posicionX)+'" y="'+str(celdaAux.posicionY)+'">'+str(celdaAux.valor)+'</posicion>'
         celdaAux = camino.pop()
-    fin = '\n<terreno>'
+    fin = '\n</terreno>'
     return inicio + fin
 
 def crearGrafica(nombre, matriz):
@@ -469,13 +444,15 @@ def menu():
                     matrizTerreno.obtenerRuta(matrizTerreno.buscar(celdaInicio))
                     celdaFinal = celda(terreno.posicionFinX,terreno.posicionFinY,0)
                     recorrido = matrizTerreno.Ruta(matrizTerreno.buscar(celdaFinal))
-                    contenido = crearXml(terreno.nombre, str(terreno.posicionInicioX), str(terreno.posicionInicioY), str(terreno.posicionFinX), str(terreno.posicionFinY), str(matrizTerreno.buscar(celdaFinal).acumulado),recorrido)
+                    contenido = crearXml(terreno.nombre, str(terreno.dimensionX), str(terreno.dimensionY), str(terreno.posicionInicioX), str(terreno.posicionInicioY), str(terreno.posicionFinX), str(terreno.posicionFinY), str(matrizTerreno.buscar(celdaFinal).acumulado),recorrido)
                     variable = int(input(' 1. Escribir ruta\n 2. Guardar en la carpeta del proyecto\nEscoja la opcion deseada:'))
                     if variable == 1:
                         name = input('Escriba la ruta para guardar el archivo, por  favor incluya nombre y extension\n')
                         escribirArchivo(name,contenido)
                     elif variable == 2:
                         escribirArchivo(terreno.nombre+'.xml',contenido)
+                    else:
+                        print('opcion no valida, por favor intente de nuevo :) ')
                 except Exception as e:
                     print('')
             else:
